@@ -701,92 +701,22 @@ body::before {
 <!--  SETUP / AUTH SCREEN                                   -->
 <!-- ══════════════════════════════════════════════════════ -->
 <div id="setup-screen">
-  <div class="setup-box">
+  <!-- AUTH FORM — shown immediately since Firebase is pre-configured -->
+  <div class="setup-box" style="margin-bottom:0;">
     <div class="setup-logo">V<span>AU</span>LT</div>
     <div class="setup-sub">Cloud File Manager — Powered by Firebase</div>
-
-    <!-- FIREBASE CONFIG -->
-    <div class="config-section" id="config-section">
-      <div class="config-title">⚙ Firebase Configuration</div>
-      <div class="config-desc">
-        Paste your Firebase project credentials below.<br>
-        Get them from <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a>
-        → Project Settings → Your Apps → SDK Config.<br>
-        <strong style="color:var(--accent3)">Ensure Storage + Auth (Email/Password) are enabled.</strong>
-      </div>
-      <div class="config-grid">
-        <div class="config-field">
-          <label>API Key</label>
-          <input class="setup-input" id="cfg-apiKey" placeholder="AIzaSy..."/>
-        </div>
-        <div class="config-field">
-          <label>Auth Domain</label>
-          <input class="setup-input" id="cfg-authDomain" placeholder="app.firebaseapp.com"/>
-        </div>
-        <div class="config-field">
-          <label>Project ID</label>
-          <input class="setup-input" id="cfg-projectId" placeholder="my-project-id"/>
-        </div>
-        <div class="config-field">
-          <label>Storage Bucket</label>
-          <input class="setup-input" id="cfg-storageBucket" placeholder="app.appspot.com"/>
-        </div>
-        <div class="config-field">
-          <label>Messaging Sender ID</label>
-          <input class="setup-input" id="cfg-messagingSenderId" placeholder="1234567890"/>
-        </div>
-        <div class="config-field">
-          <label>App ID</label>
-          <input class="setup-input" id="cfg-appId" placeholder="1:123:web:abc"/>
-        </div>
-      </div>
-      <button class="action-btn" style="width:100%;justify-content:center;" onclick="initFirebase()">
-        ▶ Connect to Firebase
-      </button>
-    </div>
-
-    <!-- DIVIDER -->
-    <div class="setup-divider">or use demo mode</div>
-
-    <!-- DEMO MODE -->
-    <button class="demo-btn" onclick="startDemoMode()">
-      ◈ Launch Demo Mode (local storage only)
-    </button>
-  </div>
-
-  <!-- AUTH FORM (shown after Firebase init or in demo) -->
-  <div class="setup-box" id="auth-form" style="display:none; margin-top:16px;">
-    <div id="setup-msg" class="setup-msg"></div>
-
-    <div id="login-view">
-      <div class="setup-logo" style="font-size:32px;margin-bottom:4px;">Welcome Back</div>
-      <div class="setup-sub" style="margin-bottom:24px;">Sign in to your vault</div>
-      <label class="setup-label">Email Address</label>
-      <input class="setup-input" id="login-email" type="email" placeholder="you@example.com"/>
-      <label class="setup-label">Password</label>
-      <input class="setup-input" id="login-pass" type="password" placeholder="••••••••"/>
-      <div class="setup-row">
-        <button class="setup-btn primary" onclick="handleLogin()">Sign In</button>
-        <button class="setup-btn secondary" onclick="handleGuestLogin()">Guest</button>
-      </div>
-      <div class="setup-toggle">No account? <a onclick="switchToRegister()">Create one</a></div>
-    </div>
-
-    <div id="register-view" style="display:none;">
-      <div class="setup-logo" style="font-size:32px;margin-bottom:4px;">Create Account</div>
-      <div class="setup-sub" style="margin-bottom:24px;">Join the vault</div>
-      <label class="setup-label">Display Name</label>
-      <input class="setup-input" id="reg-name" type="text" placeholder="Your Name"/>
-      <label class="setup-label">Email Address</label>
-      <input class="setup-input" id="reg-email" type="email" placeholder="you@example.com"/>
-      <label class="setup-label">Password</label>
-      <input class="setup-input" id="reg-pass" type="password" placeholder="Min 6 characters"/>
-      <div class="setup-row">
-        <button class="setup-btn primary" onclick="handleRegister()">Create Account</button>
-      </div>
-      <div class="setup-toggle">Already have an account? <a onclick="switchToLogin()">Sign in</a></div>
+    <!-- Firebase status badge -->
+    <div id="firebase-status" style="
+      display:flex; align-items:center; gap:8px;
+      background:rgba(0,229,255,0.06); border:1px solid rgba(0,229,255,0.2);
+      border-radius:4px; padding:8px 14px; margin-bottom:24px;
+      font-family:var(--mono); font-size:10px; color:var(--accent); letter-spacing:1px;">
+      <span id="fb-dot" style="width:7px;height:7px;border-radius:50%;background:var(--text3);display:inline-block;"></span>
+      <span id="fb-status-text">Connecting to Firebase…</span>
     </div>
   </div>
+
+  <div class="setup-box" id="auth-form" style="display:none; margin-top:12px;"></div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════ -->
@@ -927,31 +857,46 @@ let STATE = {
 
 const FIREBASE_STORAGE_LIMIT_MB = 1024; // Firebase free tier: 5 GB, showing 1 GB
 
-// ─── FIREBASE INIT ────────────────────────────────────────
-function initFirebase() {
-  const cfg = {
-    apiKey:            document.getElementById('cfg-apiKey').value.trim(),
-    authDomain:        document.getElementById('cfg-authDomain').value.trim(),
-    projectId:         document.getElementById('cfg-projectId').value.trim(),
-    storageBucket:     document.getElementById('cfg-storageBucket').value.trim(),
-    messagingSenderId: document.getElementById('cfg-messagingSenderId').value.trim(),
-    appId:             document.getElementById('cfg-appId').value.trim()
-  };
+// ─── FIREBASE CONFIG (pre-configured) ────────────────────
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyBfqxhP_lmL5x5k8jEB8ijPouFDM2KE94o",
+  authDomain:        "project-f66d8.firebaseapp.com",
+  projectId:         "project-f66d8",
+  storageBucket:     "project-f66d8.firebasestorage.app",
+  messagingSenderId: "646077418570",
+  appId:             "1:646077418570:web:f637be8dca8b05cb0deab3",
+  measurementId:     "G-XVVR61K2RR"
+};
 
-  const missing = Object.entries(cfg).filter(([k,v]) => !v);
-  if (missing.length > 0) {
-    showToast('Please fill all Firebase config fields', 'error'); return;
+// ─── AUTO FIREBASE INIT on page load ─────────────────────
+function setFirebaseStatus(ok, msg) {
+  const dot  = document.getElementById('fb-dot');
+  const text = document.getElementById('fb-status-text');
+  if (!dot || !text) return;
+  dot.style.background  = ok ? 'var(--accent3)' : 'var(--accent2)';
+  text.textContent = msg;
+  const wrap = document.getElementById('firebase-status');
+  if (wrap) {
+    wrap.style.borderColor = ok ? 'rgba(184,255,90,0.3)' : 'rgba(255,77,109,0.3)';
+    wrap.style.background  = ok ? 'rgba(184,255,90,0.06)' : 'rgba(255,77,109,0.06)';
+    wrap.style.color       = ok ? 'var(--accent3)' : 'var(--accent2)';
+    dot.style.boxShadow    = ok ? '0 0 6px var(--accent3)' : '0 0 6px var(--accent2)';
   }
+}
 
+function initFirebase() {
   try {
     if (firebase.apps.length) firebase.app().delete();
-    STATE.firebaseApp = firebase.initializeApp(cfg);
+    STATE.firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
     STATE.auth    = firebase.auth();
     STATE.storage = firebase.storage();
     STATE.db      = firebase.firestore();
     STATE.mode    = 'firebase';
 
-    // Auth state listener
+    setFirebaseStatus(true, '● project-f66d8 — Connected');
+    document.getElementById('stat-provider').textContent = 'Firebase';
+
+    // Auth state listener — shows login form or goes straight to app
     STATE.auth.onAuthStateChanged(user => {
       if (user) {
         onUserSignedIn(user);
@@ -959,27 +904,20 @@ function initFirebase() {
         showAuthForm();
       }
     });
-
-    document.getElementById('config-section').style.display = 'none';
-    document.getElementById('auth-form').style.display = 'block';
-    document.querySelector('.setup-divider').style.display = 'none';
-    document.querySelector('.demo-btn').style.display = 'none';
-    document.getElementById('stat-provider').textContent = 'Firebase';
-    showToast('Firebase connected!', 'success');
   } catch(e) {
-    showToast('Firebase init error: ' + e.message, 'error');
+    setFirebaseStatus(false, '✕ Connection failed: ' + e.message);
+    showToast('Firebase error: ' + e.message, 'error');
+    // Fallback to demo mode automatically
+    startDemoMode();
   }
 }
 
 // ─── DEMO MODE ────────────────────────────────────────────
 function startDemoMode() {
   STATE.mode = 'demo';
-  document.getElementById('config-section').style.display = 'none';
-  document.querySelector('.setup-divider').style.display = 'none';
-  document.querySelector('.demo-btn').style.display = 'none';
   document.getElementById('auth-form').style.display = 'block';
   document.getElementById('stat-provider').textContent = 'Local Demo';
-  showToast('Demo mode: files stored locally in memory', 'info');
+  setFirebaseStatus(false, '◈ Running in Demo Mode (local storage)');
 }
 
 // ─── AUTH HANDLERS ────────────────────────────────────────
@@ -1025,11 +963,10 @@ async function handleRegister() {
 }
 
 async function handleSignOut() {
-  if (STATE.mode === 'firebase') await STATE.auth.signOut();
+  if (STATE.mode === 'firebase' && STATE.auth) await STATE.auth.signOut();
   STATE.user = null; STATE.files = []; STATE.filteredFiles = [];
   document.getElementById('app').classList.remove('visible');
-  document.getElementById('setup-screen').classList.remove('hidden');
-  document.getElementById('auth-form').style.display = 'block';
+  showAuthForm();
 }
 
 function switchToRegister() {
@@ -1061,9 +998,45 @@ async function onUserSignedIn(user) {
 }
 
 function showAuthForm() {
+  const authForm = document.getElementById('auth-form');
+  authForm.style.display = 'block';
+  authForm.innerHTML = `
+    <div id="setup-msg" class="setup-msg"></div>
+    <div id="login-view">
+      <div class="setup-logo" style="font-size:32px;margin-bottom:4px;">Welcome Back</div>
+      <div class="setup-sub" style="margin-bottom:24px;">Sign in to your vault</div>
+      <label class="setup-label">Email Address</label>
+      <input class="setup-input" id="login-email" type="email" placeholder="you@example.com"/>
+      <label class="setup-label">Password</label>
+      <input class="setup-input" id="login-pass" type="password" placeholder="••••••••"/>
+      <div class="setup-row">
+        <button class="setup-btn primary" onclick="handleLogin()">Sign In</button>
+        <button class="setup-btn secondary" onclick="handleGuestLogin()">Guest</button>
+      </div>
+      <div class="setup-toggle">No account? <a onclick="switchToRegister()">Create one</a></div>
+    </div>
+    <div id="register-view" style="display:none;">
+      <div class="setup-logo" style="font-size:32px;margin-bottom:4px;">Create Account</div>
+      <div class="setup-sub" style="margin-bottom:24px;">Join the vault</div>
+      <label class="setup-label">Display Name</label>
+      <input class="setup-input" id="reg-name" type="text" placeholder="Your Name"/>
+      <label class="setup-label">Email Address</label>
+      <input class="setup-input" id="reg-email" type="email" placeholder="you@example.com"/>
+      <label class="setup-label">Password</label>
+      <input class="setup-input" id="reg-pass" type="password" placeholder="Min 6 characters"/>
+      <div class="setup-row">
+        <button class="setup-btn primary" onclick="handleRegister()">Create Account</button>
+      </div>
+      <div class="setup-toggle">Already have an account? <a onclick="switchToLogin()">Sign in</a></div>
+    </div>`;
   document.getElementById('setup-screen').classList.remove('hidden');
   document.getElementById('app').classList.remove('visible');
 }
+
+// ─── AUTO-INIT FIREBASE ON PAGE LOAD ─────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initFirebase();
+});
 
 // ─── FIRESTORE FILE METADATA ──────────────────────────────
 async function loadFilesFromFirestore() {
